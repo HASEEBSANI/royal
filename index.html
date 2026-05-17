@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Smart Analytics</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+  :root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-light: #eef2ff;
+    --bg-body: #f8fafc;
+    --bg-card: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --sidebar-width: 280px;
+    --topbar-height: 70px;
+    --border-color: #e2e8f0;
+  }
+
+  body { 
+    margin: 0; 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    background: var(--bg-body); 
+    color: var(--text-main);
+  }
+
+  /* Prevent background scroll when sidebar (bottom sheet) is open */
+  body.menu-open {
+    overflow: hidden;
+  }
+
+  .topbar {
+    height: var(--topbar-height); 
+    background: rgba(255, 255, 255, 0.9); 
+    backdrop-filter: blur(10px);
+    display: flex; 
+    align-items: center; 
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 101;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  .layout {
+    display: flex; 
+    align-items: flex-start; 
+    min-height: calc(100vh - var(--topbar-height));
+  }
+
+  /* SIDEBAR: Standard Desktop View */
+  .sidebar {
+    width: var(--sidebar-width);
+    background: #ffffff;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+    position: sticky;
+    top: var(--topbar-height);
+    height: calc(100vh - var(--topbar-height));
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  /* CONTENT: Flexible width for better dashboard view */
+  .content { 
+    flex: 1; 
+    padding: 32px; 
+    width: 100%; 
+    box-sizing: border-box; 
+  }
+
+  .dash-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .dash-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.1), 0 10px 10px -5px rgba(79, 70, 229, 0.04);
+  }
+
+  .menu-content.hidden { display: none; }
+  .rotate-180 { transform: rotate(180deg); }
+
+  /* --- MOBILE BOTTOM SHEET --- */
+  @media (max-width: 1024px) {
+    .layout { display: block; }
+
+    .sidebar {
+      position: fixed;
+      left: 0;
+      bottom: -100%; /* Hidden */
+      top: auto;
+      width: 100%;
+      height: 75vh;
+      z-index: 2000;
+      border-right: none;
+      border-top: 1px solid var(--border-color);
+      border-radius: 32px 32px 0 0;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+      padding: 40px 20px 60px 20px;
+      transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sidebar.show { bottom: 0; }
+
+    .sidebar::before {
+      content: "";
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 45px;
+      height: 5px;
+      background: #e2e8f0;
+      border-radius: 10px;
+    }
+  }
+
+  .sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.4s ease;
+}
+
+.sidebar-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+  <div class="flex items-center gap-3">
+      <span class="text-2xl cursor-pointer lg:hidden" onclick="toggleSidebar()">☰</span>
+
+      <div class="flex items-center gap-3">
+        <div class="hidden md:flex w-10 h-10 bg-indigo-600 rounded-xl items-center justify-center shadow-lg shadow-indigo-200">
+          <span class="text-white font-bold text-sm">DB</span>
+        </div>
+        
+        <span class="font-extrabold text-slate-800 text-lg md:text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
+Main Dashboard</span>
+      </div>
+  </div>
+  <div id="dateDisplay" class="hidden md:block text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100"></div>
+</div>
+
+<div class="layout">
+  <div id="sidebar" class="sidebar space-y-2">
+    <div class="menu-item" id="group-forms">
+      <button onclick="toggleAccordion('group-forms')" class="w-full flex items-center justify-between p-3 text-gray-700 hover:bg-indigo-50 rounded-lg transition-all group">
+        <div class="flex items-center">
+          <span class="mr-3 text-lg text-indigo-600">📝</span>
+          <span class="font-bold text-sm uppercase tracking-wide text-slate-600">Forms & Data</span>
+        </div>
+        <svg class="w-4 h-4 rotate-icon text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+      </button>
+      <div class="menu-content pl-10 space-y-1 mt-1 hidden">
+        <a href="<?= getScriptURL(); ?>?p=registration" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Registration Forum</a>
+        <a href="<?= getScriptURL(); ?>?p=requirement" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Requirements Forum</a>
+        <a href="<?= getScriptURL(); ?>?p=gifttracker" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Onam Gift Forum </a>
+        <a href="https://retaileronboarding.axio.co.in/" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">XEF Onboarding Forum</a>
+        <a href="https://miservicemanager.mi.com/public/#/create-appointment" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">xiaomi Service Forum</a>
+      </div>
+    </div>
+
+    <div class="menu-item" id="group-logs">
+      <button onclick="toggleAccordion('group-logs')" class="w-full flex items-center justify-between p-3 text-gray-700 hover:bg-indigo-50 rounded-lg transition-all group">
+        <div class="flex items-center">
+          <span class="mr-3 text-lg text-indigo-600">🕒</span>
+          <span class="font-bold text-sm uppercase tracking-wide text-slate-600">Logs</span>
+        </div>
+        <svg class="w-4 h-4 rotate-icon text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+      </button>
+      <div class="menu-content pl-10 space-y-1 mt-1 hidden">
+        <a href="<?= getScriptURL(); ?>?p=registrationhistory" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Registration Submits</a>
+        <a href="<?= getScriptURL(); ?>?p=requirementhistory" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Requirement Submits</a>
+        <a href="<?= getScriptURL(); ?>?p=giftsubmits" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Gift Submission</a>
+      </div>
+    </div>
+
+    <div class="menu-item" id="group-reports">
+      <button onclick="toggleAccordion('group-reports')" class="w-full flex items-center justify-between p-3 text-gray-700 hover:bg-indigo-50 rounded-lg transition-all group">
+        <div class="flex items-center">
+          <span class="mr-3 text-lg text-indigo-600">📈</span>
+          <span class="font-bold text-sm uppercase tracking-wide text-slate-600">Reports</span>
+        </div>
+        <svg class="w-4 h-4 rotate-icon text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+      </button>
+      <div class="menu-content pl-10 space-y-1 mt-1 hidden">
+        <a href="<?= getScriptURL(); ?>?p=retailerinsights" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Retailer Insights</a>
+        <a href="<?= getScriptURL(); ?>?p=analyticsdashboard" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Distributor Tracker</a>
+        <a href="<?= getScriptURL(); ?>?p=retailertracker" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Retailer Tracker</a>
+        <a href="<?= getScriptURL(); ?>?p=fostracker" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">FOS Tracker</a>
+        <a href="<?= getScriptURL(); ?>?p=activationtracker" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Activation Tracker</a>
+      </div>
+    </div>
+
+    <div class="menu-item" id="group-uploads">
+      <button onclick="toggleAccordion('group-uploads')" class="w-full flex items-center justify-between p-3 text-gray-700 hover:bg-indigo-50 rounded-lg transition-all group">
+        <div class="flex items-center">
+          <span class="mr-3 text-lg text-indigo-600">☁️</span>
+          <span class="font-bold text-sm uppercase tracking-wide text-slate-600">Uploads</span>
+        </div>
+        <svg class="w-4 h-4 rotate-icon text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+      </button>
+      <div class="menu-content pl-10 space-y-1 mt-1 hidden">
+        <a href="<?= getScriptURL(); ?>?p=upload" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Upload IMEI</a>
+        <a href="<?= getScriptURL(); ?>?p=fosmapping" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">FOS Mapping</a>
+        <a href="<?= getScriptURL(); ?>?p=uploadprice" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Upload Price</a>
+        <a href="<?= getScriptURL(); ?>?p=retailerupload" class="block p-2 text-sm text-gray-600 hover:text-indigo-700 border-l-2 border-transparent hover:border-indigo-600">Retailer Upload</a>
+      </div>
+    </div>
+  </div>
+
+  <main class="content">
+    <div class="mb-10">
+      <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Welcome Back</h2>
+      <p class="text-slate-500 font-medium">Quick access to your tracking tools and analytics.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      
+      <a href="<?= getScriptURL(); ?>?p=analyticsdashboard" class="dash-card bg-white p-8 rounded-[32px] border border-slate-200 block group">
+        <div class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-colors">📈</div>
+        <h3 class="text-xl font-bold text-slate-800 mb-2">Distributor Tracker</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">View retailer targets, achievements, and real-time progress percentages.</p>
+      </a>
+
+      <a href="<?= getScriptURL(); ?>?p=retailerinsights" class="dash-card bg-white p-8 rounded-[32px] border border-slate-200 block group">
+        <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-colors">💎</div>
+        <h3 class="text-xl font-bold text-slate-800 mb-2">Retailer Insights</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Detailed breakdown of activations and store-level analytics.</p>
+      </a>
+
+      <a href="<?= getScriptURL(); ?>?p=fostracker" class="dash-card bg-white p-8 rounded-[32px] border border-slate-200 block group">
+        <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-orange-600 group-hover:text-white transition-colors">📍</div>
+        <h3 class="text-xl font-bold text-slate-800 mb-2">FOS Tracker</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Track field officer activities and registration submissions.</p>
+      </a>
+
+      <a href="<?= getScriptURL(); ?>?p=upload" class="dash-card bg-white p-8 rounded-[32px] border border-slate-200 block group">
+        <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors">☁️</div>
+        <h3 class="text-xl font-bold text-slate-800 mb-2">Upload Data</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Bulk upload IMEI data or update pricing lists to the database.</p>
+      </a>
+
+      <a href="<?= getScriptURL(); ?>?p=retailertracker" class="dash-card bg-white p-8 rounded-[32px] border border-slate-200 block group">
+        <div class="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-rose-600 group-hover:text-white transition-colors">🏪</div>
+        <h3 class="text-xl font-bold text-slate-800 mb-2">Retailer Tracker</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Monitor individual retailer performance and registration status.</p>
+      </a>
+
+      <a href="<?= getScriptURL(); ?>?p=activationtracker" class="dash-card bg-white p-8 rounded-[32px] border border-slate-200 block group">
+        <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-amber-600 group-hover:text-white transition-colors">📑</div>
+        <h3 class="text-xl font-bold text-slate-800 mb-2">Activation Tracker</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Review history of activated devices and submission logs.</p>
+      </a>
+    </div>
+  </main>
+</div>
+</div>
+
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<script>
+  function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const isOpen = sidebar.classList.contains('show');
+
+  if (!isOpen) {
+    // Open Sidebar
+    sidebar.classList.add('show');
+    overlay.classList.add('show');
+    document.body.classList.add('menu-open');
+    
+    // Push a state so the back button closes the menu instead of leaving the page
+    history.pushState({ drawer: 'open' }, '');
+  } else {
+    closeSidebar();
+  }
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  
+  sidebar.classList.remove('show');
+  overlay.classList.remove('show');
+  document.body.classList.remove('menu-open');
+  
+  // Clean up history state if we closed via tap/click instead of back button
+  if (history.state && history.state.drawer === 'open') {
+    history.back();
+  }
+}
+
+// Listen for the Browser Back Button
+window.addEventListener('popstate', (event) => {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar.classList.contains('show')) {
+    // Close without calling history.back() again
+    sidebar.classList.remove('show');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+    document.body.classList.remove('menu-open');
+  }
+});
+  
+  function toggleAccordion(id) {
+  // 1. Find the section we want to toggle
+  const targetMenu = document.getElementById(id);
+  const targetContent = targetMenu.querySelector('.menu-content');
+  const targetIcon = targetMenu.querySelector('.rotate-icon');
+  
+  // 2. Check if it's already open
+  const isAlreadyOpen = !targetContent.classList.contains('hidden');
+
+  // 3. Close ALL other sections
+  document.querySelectorAll('.menu-item').forEach(item => {
+    const content = item.querySelector('.menu-content');
+    const icon = item.querySelector('.rotate-icon');
+    
+    if (content) content.classList.add('hidden');
+    if (icon) icon.classList.remove('rotate-180');
+  });
+
+  // 4. If the clicked one wasn't open, open it now
+  if (!isAlreadyOpen) {
+    targetContent.classList.remove('hidden');
+    targetIcon.classList.add('rotate-180');
+  }
+}
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const now = new Date();
+    document.getElementById('dateDisplay').innerText = now.toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+  });
+</script>
+
+</body>
+</html>
