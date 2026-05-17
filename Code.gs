@@ -28,28 +28,86 @@ const PRICE_SHEETS = {
 };
 
 function doGet(e) {
-  let page = (e && e.parameter && e.parameter.p) ? e.parameter.p : "index";
-  let fileName = page.toLowerCase(); 
-  try {
-    return HtmlService.createTemplateFromFile(fileName)
-      .evaluate()
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-      .setTitle("Activation System | " + page.toUpperCase());
-  } catch (err) {
-    return HtmlService.createHtmlOutput("<b>Error:</b> The file '" + fileName + ".html' was not found.");
+
+  const action = e.parameter.action;
+
+  if (action === "dashboard") {
+    return outputJSON(getDashboardData());
   }
+
+  if (action === "requirements") {
+    return outputJSON(getRequirementData());
+  }
+
+  if (action === "recent") {
+    return outputJSON(getRecentSubmissions());
+  }
+
+  if (action === "stats") {
+    return outputJSON(getDashboardStats());
+  }
+
+  if (action === "retailers") {
+    return outputJSON(getUniqueRetailers());
+  }
+
+  return outputJSON({
+    status: "error",
+    message: "Invalid action"
+  });
+}
+
+
+function doPost(e) {
+
+  try {
+
+    const data = JSON.parse(e.postData.contents);
+
+    switch (data.action) {
+
+      case "processRequirement":
+        return outputJSON(processRequirement(data.payload));
+
+      case "processFormSubmission":
+        return outputJSON(processFormSubmission(data.payload));
+
+      case "processCSVUpload":
+        return outputJSON(processCSVUpload(data.payload));
+
+      case "newActivations":
+        return outputJSON(processNewActivations(data.payload));
+
+      default:
+        return outputJSON({
+          status: "error",
+          message: "Unknown action"
+        });
+    }
+
+  } catch(err) {
+
+    return outputJSON({
+      status: "error",
+      message: err.toString()
+    });
+
+  }
+}
+
+
+function outputJSON(data) {
+
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+
 }
 
 function getScriptURL() {
   return ScriptApp.getService().getUrl();
 }
 
-
-function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename)
-      .getContent();
-}
 /***************************************************
  * 2. REQUIREMENT HISTORY LOGIC
  ***************************************************/
