@@ -680,26 +680,110 @@ function parseDate(dateStr){
 
 /* ================= LOAD DATA ================= */
 
-function loadDashboard(){
+function getDashboardData() {
 
-  google.script.run
-    .withSuccessHandler(data => {
+  try {
 
-      let rows = data.rows || [];
+    const ss = SpreadsheetApp.openById(ACT_SPREADSHEET_ID);
 
-      rows.sort((a,b) =>
-        parseDate(b.activated) - parseDate(a.activated)
-      );
+    const sheet = ss.getSheetByName("Sheet1");
 
-      masterRows = rows;
+    if (!sheet) {
+      return {
+        rows: [],
+        totalCount: 0,
+        error: "Sheet not found"
+      };
+    }
 
-      localStorage.setItem(CACHE_KEY, JSON.stringify(masterRows));
+    const data = sheet.getDataRange().getValues();
 
-      populateRetailerDropdown();
-      applyFilters();
+    if (data.length < 2) {
+      return {
+        rows: [],
+        totalCount: 0,
+        error: "No data"
+      };
+    }
 
-    })
-    .getDashboardData();
+    const headers = data[0];
+
+    Logger.log(headers);
+
+    const rows = data.slice(1).map(row => {
+
+      return {
+
+        imei:
+          row[
+            headers.findIndex(h =>
+              /imei/i.test(h)
+            )
+          ] || "-",
+
+        product:
+          row[
+            headers.findIndex(h =>
+              /product/i.test(h)
+            )
+          ] || "-",
+
+        activated: formatDateValue(
+          row[
+            headers.findIndex(h =>
+              /activ|aciv|date|time/i.test(h)
+            )
+          ]
+        ),
+
+        dms:
+          row[
+            headers.findIndex(h =>
+              /dms/i.test(h)
+            )
+          ] || "-",
+
+        retailer:
+          row[
+            headers.findIndex(h =>
+              /retailer/i.test(h)
+            )
+          ] || "-"
+
+      };
+
+    }).reverse();
+
+    return {
+      rows: rows,
+      totalCount: rows.length
+    };
+
+  } catch (e) {
+
+    return {
+      rows: [],
+      totalCount: 0,
+      error: e.toString()
+    };
+
+  }
+
+}
+
+function formatDateValue(val) {
+
+  if (val instanceof Date) {
+
+    return Utilities.formatDate(
+      val,
+      TIMEZONE,
+      "dd-MM-yyyy HH:mm"
+    );
+
+  }
+
+  return val || "-";
 
 }
 
@@ -1107,6 +1191,7 @@ function toggleAccordion(id){
   }
 
 }
+
 
 </script>
 
